@@ -40,6 +40,7 @@ class SlimmedROI : public TObject
       stablez_  = other.stablez_;
       partonid_ = other.partonid_; 
       stableid_ = other.stableid_;
+      stablemotherid_ = other.stablemotherid_;
       betaStar_ = other.betaStar_;
     }
 
@@ -47,11 +48,11 @@ class SlimmedROI : public TObject
   void setPFMultiplicities(float nhm, float pm, float chm) { nhm_=nhm; pm_=pm; chm_=chm; }
   void setGenJet(float pt, float eta, float phi, float mass, float area) { genpt_=pt; geneta_=eta; genphi_=phi; genmass_=mass; genarea_=area; }
   void setParton(float pt, float eta, float phi, int id) { partonpt_=pt; partoneta_=eta; partonphi_=phi; partonid_=id;}
-  void setStable(int id,   
+  void setStable(int id, int motherid,   
 		 float pt, float eta, float phi,
 		 float hitx, float hity, float hitz) 
   { 
-    stableid_=id;
+    stableid_=id;  stablemotherid_=motherid;
     stablept_=pt;  stableeta_=eta; stablephi_=phi; 
     stablex_=hitx; stabley_=hity;  stablez_=hitz;
   }
@@ -64,7 +65,7 @@ class SlimmedROI : public TObject
   float partonpt_, partoneta_, partonphi_;
   float stablept_, stableeta_, stablephi_;
   float stablex_, stabley_, stablez_;
-  int partonid_,stableid_;
+  int partonid_,stableid_, stablemotherid_;
   std::vector<float> betaStar_;
 
   ClassDef(SlimmedROI,1)

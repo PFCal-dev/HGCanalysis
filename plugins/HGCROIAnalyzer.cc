@@ -433,9 +433,11 @@ void HGCROIAnalyzer::analyze(const edm::Event &iEvent, const edm::EventSetup &iS
 	      if(genJet2Stable.find(genJetIdx)!=genJet2Stable.end())
 		{
 		  const reco::GenParticle & p = dynamic_cast<const reco::GenParticle &>( (*genParticles)[ genJet2Stable[genJetIdx] ] );
-		  G4InteractionPositionInfo intInfo=getInteractionPosition(SimTk.product(),SimVtx.product(),genBarcodes->at(genJet2Stable[genJetIdx]));
+		  bool debug(false);//p.mother()->pdgId()==25);
+		  G4InteractionPositionInfo intInfo=getInteractionPosition(SimTk.product(),SimVtx.product(),genBarcodes->at(genJet2Stable[genJetIdx]),debug);
 		  math::XYZVectorD hitPos=intInfo.pos; 
-		  slimSuperCluster.setStable(p.pdgId(),
+		  int motherId( p.numberOfMothers() ? p.mother()->pdgId() : 0);
+		  slimSuperCluster.setStable(p.pdgId(),   motherId,
 					     p.pt(),      p.eta(),     p.phi(),  
 					     hitPos.x(),  hitPos.y(),  hitPos.z());
 		}
@@ -538,7 +540,8 @@ void HGCROIAnalyzer::analyze(const edm::Event &iEvent, const edm::EventSetup &iS
 		  const reco::GenParticle & p = dynamic_cast<const reco::GenParticle &>( (*genParticles)[ genJet2Stable[genJetIdx] ] );
 		  G4InteractionPositionInfo intInfo=getInteractionPosition(SimTk.product(),SimVtx.product(),genBarcodes->at(genJet2Stable[genJetIdx]));
 		  math::XYZVectorD hitPos=intInfo.pos; 
-		  slimJet.setStable(p.pdgId(),
+		  int motherId( p.numberOfMothers() ? p.mother()->pdgId() : 0);
+		  slimJet.setStable(p.pdgId(),   motherId,
 				    p.pt(),      p.eta(),     p.phi(),  
 				    hitPos.x(),  hitPos.y(),  hitPos.z());
 		}
@@ -624,11 +627,9 @@ void HGCROIAnalyzer::analyze(const edm::Event &iEvent, const edm::EventSetup &iS
 	}
     }
   
-  //remove unclustered vertices
-  std::cout << slimmedRecHits_->size() << "->";
+  //remove unclustered vertices  
   slimmedRecHits_->erase(remove_if(slimmedRecHits_->begin(), slimmedRecHits_->end(), SlimmedRecHit::IsNotClustered),
 			 slimmedRecHits_->end());
-  std::cout << slimmedRecHits_->size() << std::endl;
 
   //all done, fill tree
   if(slimmedROIs_->size())  tree_->Fill();

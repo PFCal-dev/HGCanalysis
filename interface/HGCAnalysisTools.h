@@ -28,7 +28,8 @@ struct G4InteractionPositionInfo
 };
 G4InteractionPositionInfo getInteractionPosition(const std::vector<SimTrack> *SimTk, 
 						 const std::vector<SimVertex> *SimVtx, 
-						 int barcode);
+						 int barcode,
+						 bool debug=false);
 
 template<class T>
 std::vector<fastjet::PseudoJet> runFastJetOn(const std::vector<const T*> &input,float cone=0.4,fastjet::JetAlgorithm algo=fastjet::kt_algorithm,float ptmin=1.0)

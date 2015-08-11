@@ -19,7 +19,8 @@ float getLambdaForHGCLayer(int hit_layer)
 //
 G4InteractionPositionInfo getInteractionPosition(const std::vector<SimTrack> *SimTk, 
 						 const std::vector<SimVertex> *SimVtx, 
-						 int barcode)
+						 int barcode,
+						 bool debug)
 {
   G4InteractionPositionInfo toRet;
   toRet.pos=math::XYZVectorD(0,0,0);
