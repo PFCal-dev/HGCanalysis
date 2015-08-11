@@ -75,21 +75,23 @@ process.genCandsFromSimTracks = cms.EDProducer("PATGenCandsFromSimTracksProducer
                                                genParticles   = cms.InputTag("genParticles"),
                                                )
 
-#output full event
-process.output = cms.OutputModule("PoolOutputModule",
-                                  splitLevel = cms.untracked.int32(0),
-                                  eventAutoFlushCompressedSize = cms.untracked.int32(5242880),
-                                  outputCommands = cms.untracked.vstring('keep *_*_*_ROIAnalysis',
-                                                                         'keep *_genCandsFromSimTracks_*_*'),
-                                  fileName = cms.untracked.string('FullEvents.root'),
-                                  dataset = cms.untracked.PSet(filterName = cms.untracked.string(''),
-                                                               dataTier = cms.untracked.string('GEN-SIM-RECO')
-                                                               )
-                                  )
-process.end=cms.EndPath(process.output)
-
 #run it
 process.p = cms.Path(process.genCandsFromSimTracks*process.analysis)
 
-#uncomment to store the event
+#output full event (uncomment to get it)
+#process.output = cms.OutputModule("PoolOutputModule",
+#                                  splitLevel = cms.untracked.int32(0),
+#                                  eventAutoFlushCompressedSize = cms.untracked.int32(5242880),
+#                                  outputCommands = cms.untracked.vstring('keep *_*_*_ROIAnalysis',
+#                                                                         'keep *_genCandsFromSimTracks_*_*'),
+#                                  fileName = cms.untracked.string('FullEvents.root'),
+#                                  dataset = cms.untracked.PSet(filterName = cms.untracked.string(''),
+#                                                               dataTier = cms.untracked.string('GEN-SIM-RECO')
+#                                                               )
+#                                  )
+#process.end=cms.EndPath(process.output)
 #process.schedule=cms.Schedule(process.p,process.end)
+
+
+
+
