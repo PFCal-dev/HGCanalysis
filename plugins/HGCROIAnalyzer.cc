@@ -46,6 +46,7 @@ HGCROIAnalyzer::HGCROIAnalyzer( const edm::ParameterSet &iConfig ) :
   g4TracksSource_   = iConfig.getUntrackedParameter< std::string >("g4TracksSource");
   g4VerticesSource_ = iConfig.getUntrackedParameter< std::string >("g4VerticesSource");
   genSource_        = iConfig.getUntrackedParameter< std::string >("genSource");
+  genCandsFromSimTracksSource_ = iConfig.getUntrackedParameter< std::string >("genCandsFromSimTracksSource");
   genJetsSource_    = iConfig.getUntrackedParameter<std::string>("genJetsSource");
   recoVertexSource_ = iConfig.getUntrackedParameter<std::string>("recoVertexSource");
   useSuperClustersAsROIs_ = iConfig.getUntrackedParameter<bool>("useSuperClustersAsROIs");
@@ -370,19 +371,20 @@ void HGCROIAnalyzer::analyze(const edm::Event &iEvent, const edm::EventSetup &iS
       slimmedVertices_->push_back(SlimmedVertex(vtx.nTracks(),vtx.x(),vtx.y(),vtx.z(),vtx.p4().pt(),vtx.normalizedChi2()) );
     }
   
-  // get the vertices for later
+  // get the gen particles
   edm::Handle<edm::View<reco::Candidate> > genParticles;
   iEvent.getByLabel(edm::InputTag(genSource_), genParticles);
-  
-  // get the vertex info...
+  edm::Handle<reco::GenParticleCollection> genCandsFromSimTracks;
+  iEvent.getByLabel(edm::InputTag(genCandsFromSimTracksSource_), genCandsFromSimTracks);
+
+  // get the vertex info
   edm::Handle<edm::HepMCProduct>  hepmcevent;
   iEvent.getByLabel(edm::InputTag("generator"), hepmcevent);
   const HepMC::GenEvent& genevt = hepmcevent->getHepMCData();
   genVertex_->SetXYZT(0.,0.,0.,0.);
   if( genevt.vertices_size() ) {
-    
     HepMC::FourVector temp = (*genevt.vertices_begin())->position() ;
-    genVertex_->SetXYZT(0.1*temp.x(),0.1*temp.y(),0.1*temp.z(),temp.t()/299.792458); // convert positions to cm and time to ns (it's in mm to start?)
+    genVertex_->SetXYZT(0.1*temp.x(),0.1*temp.y(),0.1*temp.z(),temp.t()/299.792458); // convert positions to cm and time to ns (it's in mm to start)
   }
   
   //jet analysis
@@ -412,6 +414,7 @@ void HGCROIAnalyzer::analyze(const edm::Event &iEvent, const edm::EventSetup &iS
 	  	  
 	  if(c_it->energy()<10 || fabs(c_it->eta())<1.5 || fabs(c_it->eta())>3.0) continue;
 	  
+
 	  SlimmedROI slimSuperCluster(c_it->energy()/TMath::CosH(c_it->eta()),c_it->eta(),c_it->phi(),0.,0.);
 	  for(size_t isv=0; isv<selVtx.size(); isv++) slimSuperCluster.addBetaStar(0);
 	  
@@ -433,10 +436,43 @@ void HGCROIAnalyzer::analyze(const edm::Event &iEvent, const edm::EventSetup &iS
 	      if(genJet2Stable.find(genJetIdx)!=genJet2Stable.end())
 		{
 		  const reco::GenParticle & p = dynamic_cast<const reco::GenParticle &>( (*genParticles)[ genJet2Stable[genJetIdx] ] );
-		  bool debug(false);//p.mother()->pdgId()==25);
-		  G4InteractionPositionInfo intInfo=getInteractionPosition(SimTk.product(),SimVtx.product(),genBarcodes->at(genJet2Stable[genJetIdx]),debug);
+
+		  G4InteractionPositionInfo intInfo=getInteractionPosition(SimTk.product(),SimVtx.product(),genBarcodes->at(genJet2Stable[genJetIdx]));
 		  math::XYZVectorD hitPos=intInfo.pos; 
 		  int motherId( p.numberOfMothers() ? p.mother()->pdgId() : 0);
+		  
+		  //use gen particles from sim tracks instead to determine the interaction position
+		  if(hitPos.x()==0 && hitPos.y()==0 && hitPos.z()==0)
+		    {
+		      float minDPt(99999.),minDR(99999.);
+		      for(size_t ig=0; ig<genCandsFromSimTracks->size(); ig++)
+			{
+			  const reco::GenParticle & simtrackp=genCandsFromSimTracks->at(ig);
+			  
+			  //pdgId must match either for the mother or the particle 
+			  int simtrackpmotherid( simtrackp.numberOfMothers() ? simtrackp.mother()->pdgId() : 0 );
+			  if(simtrackpmotherid!=p.pdgId() && simtrackp.pdgId()!=p.pdgId()) continue;
+			  
+			  //minimize deltaR within 0.5
+			  double dR=deltaR(simtrackp.eta(),simtrackp.phi(),p.eta(),p.phi());
+			  if(dR>0.5) continue;
+			  if(dR>minDR) continue;
+			  minDR=dR;
+			  
+			  //minimize pT match
+			  float dPt=fabs(simtrackp.pt()-p.pt());
+			  if(dPt>minDPt) continue;
+			  minDPt=dPt;
+			  
+			  //update the hit position
+			  hitPos   = math::XYZVectorD( simtrackp.vx(), simtrackp.vy(), simtrackp.vz());
+			}
+		      
+		      //
+		      std::cout << "Updated G4 hit position to : " << hitPos.x() << "," << hitPos.y() << "," << hitPos.z() << std::endl;
+		    }
+	       
+		  
 		  slimSuperCluster.setStable(p.pdgId(),   motherId,
 					     p.pt(),      p.eta(),     p.phi(),  
 					     hitPos.x(),  hitPos.y(),  hitPos.z());

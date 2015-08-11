@@ -73,7 +73,7 @@ class HGCROIAnalyzer : public edm::EDAnalyzer
   std::string eeRecHitsSource_, hefRecHitsSource_;
   std::string g4TracksSource_, g4VerticesSource_;
   std::string recoVertexSource_;
-  std::string genSource_, genJetsSource_, pfJetsSource_, superClustersSource_;
+  std::string genSource_, genCandsFromSimTracksSource_, genJetsSource_, pfJetsSource_, superClustersSource_;
 };
  
 

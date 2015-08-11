@@ -12,7 +12,7 @@ process.load('Configuration.StandardSequences.MagneticField_38T_PostLS1_cff')
 ## MessageLogger
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = 5000
-process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(False),
+process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True), #False),
                                         SkipEvent = cms.untracked.vstring('ProductNotFound')
                                         ) 
 
@@ -63,6 +63,33 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 process.TFileService = cms.Service("TFileService", fileName = cms.string(outputName))
 process.load('UserCode.HGCanalysis.hgcROIAnalyzer_cfi')
 
-#run it
-process.p = cms.Path(process.analysis)
+#add PAT utility
+process.load("SimGeneral.HepPDTESSource.pythiapdt_cfi")
+process.genCandsFromSimTracks = cms.EDProducer("PATGenCandsFromSimTracksProducer",
+                                               src           = cms.InputTag("g4SimHits"),
+                                               setStatus     = cms.int32(-1),
+                                               particleTypes = cms.vstring(),
+                                               filter        = cms.vstring(),  
+                                               makeMotherLink = cms.bool(True),
+                                               writeAncestors = cms.bool(True),      
+                                               genParticles   = cms.InputTag("genParticles"),
+                                               )
 
+#output full event
+process.output = cms.OutputModule("PoolOutputModule",
+                                  splitLevel = cms.untracked.int32(0),
+                                  eventAutoFlushCompressedSize = cms.untracked.int32(5242880),
+                                  outputCommands = cms.untracked.vstring('keep *_*_*_ROIAnalysis',
+                                                                         'keep *_genCandsFromSimTracks_*_*'),
+                                  fileName = cms.untracked.string('FullEvents.root'),
+                                  dataset = cms.untracked.PSet(filterName = cms.untracked.string(''),
+                                                               dataTier = cms.untracked.string('GEN-SIM-RECO')
+                                                               )
+                                  )
+process.end=cms.EndPath(process.output)
+
+#run it
+process.p = cms.Path(process.genCandsFromSimTracks*process.analysis)
+
+#uncomment to store the event
+#process.schedule=cms.Schedule(process.p,process.end)
