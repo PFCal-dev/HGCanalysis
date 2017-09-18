@@ -22,9 +22,11 @@
 #include "SimG4CMS/Calo/interface/CaloHitID.h"
 #include "DataFormats/ForwardDetId/interface/HGCalDetId.h"
 
+#include "SimDataFormats/CaloTest/interface/HGCalTestNumbering.h"
+
 #include "DetectorDescription/OfflineDBLoader/interface/GeometryInfoDump.h"
 #include "Geometry/Records/interface/IdealGeometryRecord.h"
-#include "Geometry/FCalGeometry/interface/HGCalGeometry.h"
+#include "Geometry/HGCalGeometry/interface/HGCalGeometry.h"
 
 #include "SimDataFormats/GeneratorProducts/interface/HepMCProduct.h"
 
@@ -106,29 +108,35 @@ void HGCROIAnalyzer::slimRecHits(const edm::Event &iEvent, const edm::EventSetup
 						    pos.x(),pos.y(),pos.z(),
 						    hit_it->energy()*1e6/eeMipEn,
 						    hit_it->time(),
-						    dddConst.getFirstModule(true)->cellSize ) );
+                                                    //FIXME!
+						    dddConst.getModules()[0].cellSize) );
 	}
       
       //add the simHits
       if(eeSimHits.isValid())
 	{
+          int layer=0,cell=0, sec=0, subsec=0, zp=0,subdet=0;
+          //ForwardSubdetector mysubdet;
 	  for(edm::PCaloHitContainer::const_iterator hit_it = eeSimHits->begin(); 
 	      hit_it != eeSimHits->end();
 	      hit_it++)
 	    {
 	      //gang SIM->RECO cells to get final layer assignment  
 	      HGCalDetId simId(hit_it->id());
-	      int layer(simId.layer()),cell(simId.cell());
-	      std::pair<int,int> recoLayerCell=dddConst.simToReco(cell,layer,topo.detectorType());
+              HGCalTestNumbering::unpackHexagonIndex(simId, subdet, zp, layer, sec, subsec, cell); 
+              //mysubdet = (ForwardSubdetector)(subdet);
+
+	      std::pair<int,int> recoLayerCell=dddConst.simToReco(cell,layer,sec,
+                                                                  topo.detectorType());
 	      cell  = recoLayerCell.first;
 	      layer = recoLayerCell.second;
-	      if(layer<0) continue;
+	      if(layer<0 || cell<0) continue;
 	      
 	      uint32_t recoDetId( (uint32_t)HGCEEDetId(ForwardSubdetector(ForwardSubdetector::HGCEE),
 						       simId.zside(),
 						       layer,
-						       simId.sector(),
-						       simId.subsector(),
+                                                       simId.waferType(),
+                                                       simId.wafer(),
 						       cell));
 	      SlimmedRecHitCollection::iterator theHit=std::find(slimmedRecHits_->begin(),
 								 slimmedRecHits_->end(),
@@ -166,20 +174,27 @@ void HGCROIAnalyzer::slimRecHits(const edm::Event &iEvent, const edm::EventSetup
 						    pos.x(),pos.y(),pos.z(),
 						    hit_it->energy()*1e6/hefMipEn,
 						    hit_it->time(),
-						    dddConst.getFirstModule(true)->cellSize ) );
+                                                    //FIXME!
+						    dddConst.getModules()[0].cellSize ) );
 	}
       
       //add the simHits
       if(hefSimHits.isValid())
 	{
+          int layer=0,cell=0, sec=0, subsec=0, zp=0,subdet=0;
+          //ForwardSubdetector mysubdet;  
 	  for(edm::PCaloHitContainer::const_iterator hit_it = hefSimHits->begin(); 
 	      hit_it != hefSimHits->end();
 	      hit_it++)
 	    {
 	      //gang SIM->RECO cells to get final layer assignment  
 	      HGCalDetId simId(hit_it->id());
-	      int layer(simId.layer()),cell(simId.cell());
-	      std::pair<int,int> recoLayerCell=dddConst.simToReco(cell,layer,topo.detectorType());
+              HGCalTestNumbering::unpackHexagonIndex(simId, subdet, zp, layer, sec, subsec, cell);
+              //mysubdet = (ForwardSubdetector)(subdet);        
+
+              std::pair<int,int> recoLayerCell=dddConst.simToReco(cell,layer,sec,
+                                                                  topo.detectorType());
+
 	      cell  = recoLayerCell.first;
 	      layer = recoLayerCell.second;
 	      if(layer<0) continue;
@@ -187,8 +202,8 @@ void HGCROIAnalyzer::slimRecHits(const edm::Event &iEvent, const edm::EventSetup
 	      uint32_t recoDetId( (uint32_t)HGCHEDetId(ForwardSubdetector(ForwardSubdetector::HGCHEF),
 						       simId.zside(),
 						       layer,
-						       simId.sector(),
-						       simId.subsector(),
+                                                       simId.waferType(),
+                                                       simId.wafer(),
 						       cell));
 	      SlimmedRecHitCollection::iterator theHit=std::find(slimmedRecHits_->begin(),
 								 slimmedRecHits_->end(),
@@ -599,7 +614,7 @@ void HGCROIAnalyzer::analyze(const edm::Event &iEvent, const edm::EventSetup &iS
 		  for(unsigned int iEle=0; iEle<eleList.size(); iEle++)
 		    {
 		      reco::PFBlockElement::Type eletype = eleList[iEle].type();
-		      if(eletype!=reco::PFBlockElement::HGC_ECAL && eletype!=reco::PFBlockElement::HGC_HCALF && eletype!=reco::PFBlockElement::HGC_HCALB) continue;
+		      if(eletype!=reco::PFBlockElement::HGCAL) continue;
 		      pfClusters.insert( dynamic_cast<const reco::PFBlockElementCluster*>(&(eleList[iEle])) );
 		    }
 		}

@@ -19,7 +19,7 @@
 <use name="SimDataFormats/Vertex"/>
 <use name="SimDataFormats/CaloTest"/>
 <use name="DataFormats/TrackReco"/>
-<use name="Geometry/FCalGeometry"/>
+<use name="Geometry/HGCalGeometry"/>
 <use name="Geometry/TrackerGeometryBuilder"/>
 <use name="DataFormats/GeometrySurface"/>
 <use name="DataFormats/TrajectorySeed"/>

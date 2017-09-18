@@ -23,7 +23,7 @@
 #include "DataFormats/ForwardDetId/interface/HGCalDetId.h"
 #include "DataFormats/HGCDigi/interface/HGCDigiCollections.h"
 
-#include "SimCalorimetry/HGCSimProducers/interface/HGCDigitizerBase.h"  
+#include "SimCalorimetry/HGCalSimProducers/interface/HGCDigitizerBase.h"  
 
 #include "UserCode/HGCanalysis/interface/HGCSimulationEvent.h"
 
@@ -42,7 +42,7 @@
 #include "DataFormats/GeometrySurface/interface/BoundDisk.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 #include "MagneticField/Engine/interface/MagneticField.h"
-#include "Geometry/FCalGeometry/interface/HGCalGeometry.h"
+#include "Geometry/HGCalGeometry/interface/HGCalGeometry.h"
 
 #include "TH1F.h"
 #include "TH2F.h"
